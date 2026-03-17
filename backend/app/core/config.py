@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     # SMS (for development, return code in response)
     sms_api_key: Optional[str] = Field(default=None, env="SMS_API_KEY")
 
+    # Edamam API
+    edamam_app_id: Optional[str] = Field(default=None, env="EDAMAM_APP_ID")
+    edamam_app_key: Optional[str] = Field(default=None, env="EDAMAM_APP_KEY")
+
     # App
     app_name: str = "AI-Dieta Backend"
     app_version: str = "1.0.0"

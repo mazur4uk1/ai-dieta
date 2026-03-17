@@ -1,0 +1,81 @@
+# Многоступенчатый Dockerfile для fullstack приложения AI-Dieta
+# Stage 1: Сборка frontend
+FROM node:18-alpine AS frontend-builder
+
+WORKDIR /app/frontend
+
+# Копируем package.json и package-lock.json для кэширования зависимостей
+COPY frontend/package*.json ./
+RUN npm ci --only=production
+
+# Копируем исходники frontend
+COPY frontend/ .
+
+# Собираем frontend
+RUN npm run build
+
+# Stage 2: Сборка backend
+FROM python:3.11-slim AS backend-builder
+
+WORKDIR /app/backend
+
+# Установка системных зависимостей
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Копируем requirements.txt для кэширования зависимостей
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Копируем исходники backend
+COPY backend/ .
+
+# Stage 3: Финальный образ
+FROM python:3.11-slim
+
+# Установка системных зависимостей
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Копируем backend из builder stage
+COPY --from=backend-builder /app/backend /app/backend
+
+# Копируем собранный frontend
+COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
+
+# Устанавливаем зависимости backend
+RUN pip install --no-cache-dir -r /app/backend/requirements.txt
+
+# Копируем frontend зависимости (если нужно)
+COPY frontend/package*.json /app/frontend/
+WORKDIR /app/frontend
+RUN npm install --only=production
+WORKDIR /app
+
+# Экспортируем переменные окружения по умолчанию
+ENV EDAMAM_APP_ID=b803dc99
+ENV EDAMAM_APP_KEY=50ba16cca84c4a5932779cc7c2a7e2e6
+ENV DATABASE_URL=sqlite:///./ai_dieta.db
+ENV SECRET_KEY=your-secret-key-here
+ENV DEBUG=false
+
+# Создаем директорию для базы данных
+RUN mkdir -p /app/backend
+
+# Копируем скрипт запуска
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Expose ports
+EXPOSE 8000 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
+
+# Запускаем оба сервиса
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

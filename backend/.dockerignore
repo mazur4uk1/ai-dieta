@@ -6,3 +6,4 @@ __pycache__
 *.db
 *.sqlite
 .env
+yolov8n.pt

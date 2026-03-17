@@ -1,13 +1,12 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { QueryProvider } from '@/lib/query-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'AI-Dieta Admin',
-  description: 'Админ-панель для управления приложением AI-Dieta',
+  title: 'AI Диета',
+  description: 'Приложение для распознавания еды и подсчета калорий',
 }
 
 export default function RootLayout({
@@ -18,9 +17,9 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body className={inter.className}>
-        <QueryProvider>
+        <div className="min-h-screen bg-gray-50">
           {children}
-        </QueryProvider>
+        </div>
       </body>
     </html>
   )
